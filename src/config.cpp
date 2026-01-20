@@ -160,6 +160,9 @@ static int parse_outputs(libconfig::Setting& outs, channel_t* channel, int i, in
             fdata->split_on_transmission = outs[o].exists("split_on_transmission") ? (bool)(outs[o]["split_on_transmission"]) : false;
             fdata->include_freq = outs[o].exists("include_freq") ? (bool)(outs[o]["include_freq"]) : false;
             fdata->fixed_filename = outs[o].exists("fixed_filename") ? (bool)(outs[o]["fixed_filename"]) : false;
+            if (fdata->fixed_filename) {
+                cerr << "rawfile output: fixed_filename enabled for " << fdata->basename << "\n";
+            }
             channel->needs_raw_iq = channel->has_iq_outputs = 1;
 
             if (fdata->continuous && fdata->split_on_transmission) {
