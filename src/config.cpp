@@ -159,10 +159,19 @@ static int parse_outputs(libconfig::Setting& outs, channel_t* channel, int i, in
             fdata->append = (!outs[o].exists("append")) || (bool)(outs[o]["append"]);
             fdata->split_on_transmission = outs[o].exists("split_on_transmission") ? (bool)(outs[o]["split_on_transmission"]) : false;
             fdata->include_freq = outs[o].exists("include_freq") ? (bool)(outs[o]["include_freq"]) : false;
+            fdata->fixed_filename = outs[o].exists("fixed_filename") ? (bool)(outs[o]["fixed_filename"]) : false;
             channel->needs_raw_iq = channel->has_iq_outputs = 1;
 
             if (fdata->continuous && fdata->split_on_transmission) {
                 cerr << "Configuration error: devices.[" << i << "] channels.[" << j << "] outputs.[" << o << "]: can't have both continuous and split_on_transmission\n";
+                error();
+            }
+            if (fdata->fixed_filename && fdata->split_on_transmission) {
+                cerr << "Configuration error: devices.[" << i << "] channels.[" << j << "] outputs.[" << o << "]: can't have both fixed_filename and split_on_transmission\n";
+                error();
+            }
+            if (fdata->fixed_filename && fdata->dated_subdirectories) {
+                cerr << "Configuration error: devices.[" << i << "] channels.[" << j << "] outputs.[" << o << "]: can't have both fixed_filename and dated_subdirectories\n";
                 error();
             }
         } else if (!strncmp(outs[o]["type"], "mixer", 5)) {

@@ -375,6 +375,11 @@ static void close_if_necessary(output_t* output) {
         return;
     }
 
+    // fixed_filename mode: never rotate files based on time
+    if (fdata->fixed_filename) {
+        return;
+    }
+
     // Check if the hour boundary was just crossed.  NOTE: Actual hour number doesn't matter but still
     // need to use localtime if enabled (some timezones have partial hour offsets)
     int start_hour;
@@ -415,17 +420,20 @@ static bool output_file_ready(channel_t* channel, output_t* output) {
 
     timeval current_time;
     gettimeofday(&current_time, NULL);
-    struct tm* time;
-    if (use_localtime) {
-        time = localtime(&current_time.tv_sec);
-    } else {
-        time = gmtime(&current_time.tv_sec);
-    }
+    struct tm* time = NULL;
+    char timestamp[32] = "";
 
-    char timestamp[32];
-    if (strftime(timestamp, sizeof(timestamp), fdata->split_on_transmission ? "_%Y%m%d_%H%M%S" : "_%Y%m%d_%H", time) == 0) {
-        log(LOG_NOTICE, "strftime returned 0\n");
-        return false;
+    if (!fdata->fixed_filename) {
+        if (use_localtime) {
+            time = localtime(&current_time.tv_sec);
+        } else {
+            time = gmtime(&current_time.tv_sec);
+        }
+
+        if (strftime(timestamp, sizeof(timestamp), fdata->split_on_transmission ? "_%Y%m%d_%H%M%S" : "_%Y%m%d_%H", time) == 0) {
+            log(LOG_NOTICE, "strftime returned 0\n");
+            return false;
+        }
     }
 
     std::string output_dir;
