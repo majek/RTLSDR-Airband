@@ -136,6 +136,7 @@ static int parse_outputs(libconfig::Setting& outs, channel_t* channel, int i, in
             }
 
         } else if (!strncmp(outs[o]["type"], "rawfile", 7)) {
+            cerr << "DEBUG: parsing rawfile output\n";
             if (parsing_mixers) {  // rawfile outputs not allowed for mixers
                 cerr << "Configuration error: mixers.[" << i << "] outputs[" << o << "]: rawfile output is not allowed for mixers\n";
                 error();
@@ -160,9 +161,7 @@ static int parse_outputs(libconfig::Setting& outs, channel_t* channel, int i, in
             fdata->split_on_transmission = outs[o].exists("split_on_transmission") ? (bool)(outs[o]["split_on_transmission"]) : false;
             fdata->include_freq = outs[o].exists("include_freq") ? (bool)(outs[o]["include_freq"]) : false;
             fdata->fixed_filename = outs[o].exists("fixed_filename") ? (bool)(outs[o]["fixed_filename"]) : false;
-            if (fdata->fixed_filename) {
-                cerr << "rawfile output: fixed_filename enabled for " << fdata->basename << "\n";
-            }
+            cerr << "DEBUG: " << fdata->basename << " fixed_filename exists=" << outs[o].exists("fixed_filename") << " value=" << fdata->fixed_filename << "\n";
             channel->needs_raw_iq = channel->has_iq_outputs = 1;
 
             if (fdata->continuous && fdata->split_on_transmission) {
