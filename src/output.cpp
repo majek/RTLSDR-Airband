@@ -246,10 +246,22 @@ int rename_if_exists(char const* oldpath, char const* newpath) {
  * Open output file (mp3 or raw IQ) for append or initial write.
  * If appending to an audio file, insert discontinuity indictor tones
  * as well as the appropriate amount of silence when in continuous mode.
+ * Handles FIFOs specially: opens them directly without the .tmp rename pattern.
  */
 static int open_file(file_data* fdata, mix_modes mixmode, int is_audio) {
-    int rename_result = rename_if_exists(fdata->file_path.c_str(), fdata->file_path_tmp.c_str());
-    fdata->f = fopen(fdata->file_path_tmp.c_str(), fdata->append ? "a+" : "w");
+    // Check if target is a FIFO (named pipe)
+    struct stat path_stat;
+    fdata->is_fifo = (stat(fdata->file_path.c_str(), &path_stat) == 0 && S_ISFIFO(path_stat.st_mode));
+
+    int rename_result = -1;
+    if (fdata->is_fifo) {
+        // For FIFOs: open directly, no .tmp pattern
+        fdata->f = fopen(fdata->file_path.c_str(), "w");
+    } else {
+        // Normal files: use .tmp pattern for atomic writes
+        rename_result = rename_if_exists(fdata->file_path.c_str(), fdata->file_path_tmp.c_str());
+        fdata->f = fopen(fdata->file_path_tmp.c_str(), fdata->append ? "a+" : "w");
+    }
     if (fdata->f == NULL) {
         return -1;
     }
@@ -337,7 +349,10 @@ static void close_file(output_t* output) {
     if (fdata->f) {
         fclose(fdata->f);
         fdata->f = NULL;
-        rename_if_exists(fdata->file_path_tmp.c_str(), fdata->file_path.c_str());
+        // Don't rename FIFOs - they were opened directly
+        if (!fdata->is_fifo) {
+            rename_if_exists(fdata->file_path_tmp.c_str(), fdata->file_path.c_str());
+        }
     }
     fdata->file_path.clear();
     fdata->file_path_tmp.clear();
